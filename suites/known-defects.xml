@@ -1,0 +1,18 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Pruebas que documentan defectos abiertos; fallan hasta que el defecto se corrija. -->
+<suite name="Suite Defectos conocidos">
+    <listeners>
+        <listener class-name="com.unicomer.qa.listeners.TestListener"/>
+    </listeners>
+
+    <test name="Defectos conocidos">
+        <groups>
+            <run>
+                <include name="known-defect"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.unicomer.qa.ui.CreditCalculatorTest"/>
+        </classes>
+    </test>
+</suite>

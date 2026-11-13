@@ -1,0 +1,99 @@
+{
+  "products": [
+    {
+      "creditType": "Consumo",
+      "purposes": ["Consolidación de deudas", "Gastos personales", "Remodelación de vivienda", "Compra de vehículo"],
+      "amountLabel": "Monto solicitado",
+      "minimumIncome": 350,
+      "minimumAmount": 1500,
+      "termYears": { "min": 2, "max": 10 },
+      "interestRate": { "min": 8.5, "max": 18.5 }
+    },
+    {
+      "creditType": "Vivienda",
+      "purposes": ["Compra de vivienda nueva o usada", "Compra de lote", "Compra de lote más construcción", "Traslado de deuda"],
+      "amountLabel": "Precio de venta",
+      "minimumIncome": 750,
+      "minimumAmount": 30000,
+      "termYears": { "min": 5, "max": 30 },
+      "interestRate": { "min": 6.95, "max": 9 }
+    },
+    {
+      "creditType": "Vehículo",
+      "purposes": ["Compra de vehículo nuevo"],
+      "amountLabel": "Precio de venta",
+      "minimumIncome": 850,
+      "minimumAmount": 5000,
+      "termYears": { "min": 2, "max": 8 },
+      "interestRate": { "min": 8.5, "max": 9 }
+    }
+  ],
+  "calculationScenarios": [
+    {
+      "creditType": "Consumo",
+      "purpose": "Gastos personales",
+      "monthlyIncome": 1200,
+      "requestedAmount": 10000,
+      "termYears": 5,
+      "interestRate": 12.5,
+      "expectedMaximumFinancing": 10000.00,
+      "expectedMonthlyPayment": 224.98
+    },
+    {
+      "creditType": "Vivienda",
+      "purpose": "Compra de lote más construcción",
+      "monthlyIncome": 1500,
+      "requestedAmount": 45000,
+      "termYears": 30,
+      "interestRate": 9,
+      "expectedMaximumFinancing": 40500.00,
+      "expectedMonthlyPayment": 325.87
+    },
+    {
+      "creditType": "Vehículo",
+      "purpose": "Compra de vehículo nuevo",
+      "monthlyIncome": 1000,
+      "requestedAmount": 20000,
+      "termYears": 5,
+      "interestRate": 9,
+      "expectedMaximumFinancing": 18000.00,
+      "expectedMonthlyPayment": 373.65
+    }
+  ],
+  "dynamicUpdateScenario": {
+    "creditType": "Vivienda",
+    "purpose": "Compra de vivienda nueva o usada",
+    "monthlyIncome": 2000,
+    "requestedAmount": 60000,
+    "termYears": 5,
+    "interestRate": 6.95,
+    "expectedMaximumFinancing": 54000.00,
+    "expectedMonthlyPayment": 1067.99
+  },
+  "paymentAlertScenario": {
+    "initial": {
+      "creditType": "Consumo",
+      "purpose": "Gastos personales",
+      "monthlyIncome": 1000,
+      "requestedAmount": 10000,
+      "termYears": 2,
+      "interestRate": 8.5,
+      "expectedMaximumFinancing": 10000.00,
+      "expectedMonthlyPayment": 454.56
+    },
+    "adjustedMonthlyIncome": 3000
+  },
+  "staleAlertScenario": {
+    "initial": {
+      "creditType": "Vivienda",
+      "purpose": "Compra de vivienda nueva o usada",
+      "monthlyIncome": 1500,
+      "requestedAmount": 999999999,
+      "termYears": 5,
+      "interestRate": 6.95,
+      "expectedMaximumFinancing": 899999999.10,
+      "expectedMonthlyPayment": 17799855.24
+    },
+    "invalidRequestedAmount": 0
+  }
+}
