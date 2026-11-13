@@ -36,17 +36,21 @@ public final class DriverFactory {
             case FIREFOX -> new FirefoxDriver(firefoxOptions(headless));
         };
 
-        driver.manage().timeouts().pageLoadTimeout(ConfigManager.pageLoadTimeout());
-        driver.manage().window().setSize(new Dimension(ConfigManager.windowWidth(), ConfigManager.windowHeight()));
-        return driver;
+        try {
+            driver.manage().timeouts().pageLoadTimeout(ConfigManager.pageLoadTimeout());
+            driver.manage().window().setSize(new Dimension(ConfigManager.windowWidth(), ConfigManager.windowHeight()));
+            return driver;
+        } catch (RuntimeException e) {
+            // Evita dejar un navegador abierto si falla su configuración.
+            driver.quit();
+            throw e;
+        }
     }
 
     private static <T extends ChromiumOptions<T>> T configureChromium(T options, boolean headless) {
         // El sitio carga scripts de terceros; la sincronización se hace con esperas explícitas.
         options.setPageLoadStrategy(PageLoadStrategy.EAGER);
-        options.addArguments(
-                "--window-size=" + ConfigManager.windowWidth() + "," + ConfigManager.windowHeight(),
-                "--disable-notifications");
+        options.addArguments("--disable-notifications");
         if (headless) {
             options.addArguments("--headless=new");
         }

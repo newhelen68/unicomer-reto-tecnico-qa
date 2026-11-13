@@ -21,8 +21,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BROWSER: ${{ inputs.browser || 'chrome' }}
-  HEADLESS: "true"
+  QA_BROWSER: ${{ inputs.browser || 'chrome' }}
+  QA_HEADLESS: "true"
 
 jobs:
   build:
@@ -54,17 +54,17 @@ jobs:
       - name: Ejecutar suite API
         run: ./mvnw -B -ntp test -DsuiteXmlFile=suites/api.xml
       - name: Resumen
-        if: always()
+        if: ${{ !cancelled() }}
         run: .github/scripts/test-summary.sh "Pruebas API" >> "$GITHUB_STEP_SUMMARY"
       - name: Publicar evidencias
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: api-results
           path: |
             target/allure-results
             target/surefire-reports
-          retention-days: 14
+          retention-days: 30
 
   ui-tests:
     name: Pruebas UI
@@ -80,7 +80,7 @@ jobs:
           cache: maven
       - name: Verificar navegador
         run: |
-          case "$BROWSER" in
+          case "$QA_BROWSER" in
             chrome) google-chrome --version ;;
             firefox) firefox --version ;;
             edge) microsoft-edge --version ;;
@@ -88,22 +88,23 @@ jobs:
       - name: Ejecutar suite UI
         run: ./mvnw -B -ntp test -DsuiteXmlFile=suites/ui.xml
       - name: Resumen
-        if: always()
-        run: .github/scripts/test-summary.sh "Pruebas UI ($BROWSER)" >> "$GITHUB_STEP_SUMMARY"
+        if: ${{ !cancelled() }}
+        run: .github/scripts/test-summary.sh "Pruebas UI ($QA_BROWSER)" >> "$GITHUB_STEP_SUMMARY"
       - name: Publicar evidencias
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: ui-results
           path: |
             target/allure-results
             target/surefire-reports
-          retention-days: 14
+          retention-days: 30
 
   report:
     name: Reporte Allure
     needs: [api-tests, ui-tests]
-    if: always()
+    # Se omite si se canceló o si las pruebas no llegaron a ejecutarse.
+    if: ${{ !cancelled() && !contains(needs.*.result, 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -127,8 +128,12 @@ jobs:
         run: |
           mkdir -p target/allure-results
           for dir in results/*/allure-results; do
-            cp -r "$dir"/. target/allure-results/
+            [ -d "$dir" ] && cp -r "$dir"/. target/allure-results/
           done
+          if [ -z "$(ls -A target/allure-results)" ]; then
+            echo "No hay resultados para generar el reporte" >&2
+            exit 1
+          fi
       - name: Generar reporte
         run: ./mvnw -B -ntp allure:report
       - name: Publicar reporte
@@ -136,4 +141,4 @@ jobs:
         with:
           name: allure-report
           path: target/allure-report
-          retention-days: 14
+          retention-days: 30

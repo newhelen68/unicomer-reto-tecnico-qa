@@ -24,7 +24,7 @@ import org.testng.ITestListener;
 import org.testng.ITestResult;
 
 /**
- * Registra el resultado de cada prueba, adjunta capturas en fallos UI y publica el ambiente en Allure.
+ * Registra el resultado de cada prueba, adjunta capturas de las pruebas UI y publica el ambiente en Allure.
  */
 public class TestListener implements ITestListener, ISuiteListener {
 
@@ -45,12 +45,13 @@ public class TestListener implements ITestListener, ISuiteListener {
     @Override
     public void onTestSuccess(ITestResult result) {
         LOG.info("Aprobada: {} ({} ms)", testName(result), duration(result));
+        attachScreenshot("Captura final");
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
         LOG.error("Fallida: {} ({} ms) - {}", testName(result), duration(result), failureMessage(result));
-        attachScreenshot();
+        attachScreenshot("Captura del fallo");
     }
 
     @Override
@@ -59,14 +60,14 @@ public class TestListener implements ITestListener, ISuiteListener {
     }
 
     // Solo las pruebas UI tienen una sesión de navegador activa en el hilo.
-    private void attachScreenshot() {
+    private void attachScreenshot(String name) {
         DriverManager.currentDriver()
                 .filter(TakesScreenshot.class::isInstance)
                 .map(TakesScreenshot.class::cast)
                 .ifPresent(driver -> {
                     try {
                         byte[] screenshot = driver.getScreenshotAs(OutputType.BYTES);
-                        Allure.attachment("Captura del fallo", "image/png",
+                        Allure.attachment(name, "image/png",
                                 new ByteArrayInputStream(screenshot), AttachmentOptions.withFileExtension(".png"));
                     } catch (WebDriverException e) {
                         LOG.warn("No fue posible capturar la pantalla: {}", e.getMessage());
@@ -77,7 +78,8 @@ public class TestListener implements ITestListener, ISuiteListener {
     // Formato clave=valor sin escapes de Properties.store para el lector de Allure 3.
     private void writeAllureEnvironment() {
         Map<String, String> environment = new LinkedHashMap<>();
-        environment.put("Navegador", ConfigManager.browser().name());
+        // Se registra sin validar: la suite API no debe depender de la configuración del navegador.
+        environment.put("Navegador", ConfigManager.browserName());
         environment.put("Headless", String.valueOf(ConfigManager.isHeadless()));
         environment.put("Web", ConfigManager.webBaseUrl());
         environment.put("API", ConfigManager.apiBaseUrl());

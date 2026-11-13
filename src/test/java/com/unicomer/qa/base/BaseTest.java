@@ -15,7 +15,7 @@ public abstract class BaseTest {
         DriverManager.startDriver();
     }
 
-    // alwaysRun garantiza el cierre aunque la prueba falle.
+    // alwaysRun mantiene el cierre en suites filtradas por grupos.
     @AfterMethod(alwaysRun = true)
     public void closeBrowser() {
         DriverManager.quitDriver();

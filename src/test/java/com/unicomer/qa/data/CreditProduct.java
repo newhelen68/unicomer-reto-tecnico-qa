@@ -13,6 +13,7 @@ public record CreditProduct(
         String amountLabel,
         BigDecimal minimumIncome,
         BigDecimal minimumAmount,
+        BigDecimal financingAtMinimumAmount,
         SliderRange termYears,
         SliderRange interestRate) {
 

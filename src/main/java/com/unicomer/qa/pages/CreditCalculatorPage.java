@@ -22,7 +22,9 @@ public class CreditCalculatorPage extends BasePage {
     private static final String CALCULATOR_PATH = "/creditos/calculadora-creditos";
     private static final String SELECTED_CLASS = "btn-selected";
 
+    // Los localizadores se anclan en las etiquetas visibles, no en clases de estilo.
     private static final String OPTIONS_CARD = "//app-card-options-credit-options";
+    private static final String RESULT_CARD_XPATH = "//app-card-calculation-result";
     private static final String INCOME_FIELD = OPTIONS_CARD + "//div[p[normalize-space()='Ingresos mensuales']]";
     private static final String AMOUNT_FIELD = OPTIONS_CARD
             + "//div[p[normalize-space()='Monto solicitado' or normalize-space()='Precio de venta']]";
@@ -30,8 +32,8 @@ public class CreditCalculatorPage extends BasePage {
     private static final String RATE_FIELD = OPTIONS_CARD + "//div[p[normalize-space()='Tasa']]";
 
     private static final By TITLE = By.cssSelector("app-home-calculadora .main-title");
-    private static final By CREDIT_TYPE_BUTTONS = By.cssSelector("app-card-options-credit-options .first-block button");
-    private static final By PURPOSE_BUTTONS = By.cssSelector("app-card-options-credit-options .second-block button");
+    private static final By CREDIT_TYPE_BUTTONS = optionButtons("¿Qué tipo de Crédito buscas?");
+    private static final By PURPOSE_BUTTONS = optionButtons("¿Para qué deseas utilizar tu Crédito?");
 
     private static final By INCOME_INPUT = By.xpath(INCOME_FIELD + "/input");
     private static final By INCOME_MESSAGE = By.xpath(INCOME_FIELD + "/div[contains(@class,'messages')]");
@@ -45,10 +47,10 @@ public class CreditCalculatorPage extends BasePage {
     private static final By RATE_LABEL = By.xpath(RATE_FIELD + "/div[contains(@class,'slider')]/p");
 
     private static final By RESULT_CARD = By.cssSelector("app-card-calculation-result");
-    private static final By MAX_FINANCING = By.cssSelector("app-card-calculation-result .total-amount .mount");
-    private static final By MONTHLY_PAYMENT = By.cssSelector("app-card-calculation-result .fee p.font-700");
-    private static final By RESULT_RATE = By.cssSelector("app-card-calculation-result .interest-rate p.font-700");
-    private static final By PAYMENT_ALERT = By.cssSelector("app-card-calculation-result .messages p");
+    private static final By MAX_FINANCING = resultValue("Monto máximo a financiar");
+    private static final By MONTHLY_PAYMENT = resultValue("Cuota mensual");
+    private static final By RESULT_RATE = resultValue("Tasa de interés");
+    private static final By RESULT_MESSAGES = By.cssSelector("app-card-calculation-result .messages");
 
     public CreditCalculatorPage(WebDriver driver) {
         super(driver);
@@ -187,25 +189,21 @@ public class CreditCalculatorPage extends BasePage {
         return CurrencyUtils.parse(getMaximumFinancingText());
     }
 
-    public String getMonthlyPaymentText() {
-        return getText(MONTHLY_PAYMENT);
-    }
-
     public BigDecimal getMonthlyPayment() {
-        return CurrencyUtils.parse(getMonthlyPaymentText());
+        return CurrencyUtils.parse(getText(MONTHLY_PAYMENT));
     }
 
     public BigDecimal getDisplayedInterestRate() {
         return new BigDecimal(getText(RESULT_RATE).replace("%", "").trim());
     }
 
-    public boolean isPaymentAlertDisplayed() {
+    /**
+     * Texto del contenedor de mensajes del resultado; vacío cuando no hay alerta.
+     * Falla si el contenedor no existe, para no aprobar una ausencia con un localizador obsoleto.
+     */
+    public String getPaymentAlertMessage() {
         scrollToResult();
-        return isDisplayed(PAYMENT_ALERT);
-    }
-
-    public String getPaymentAlertText() {
-        return getText(PAYMENT_ALERT);
+        return getTextIfPresent(RESULT_MESSAGES);
     }
 
     // El sitio desplaza un contenedor interno; se muestra el resultado como lo vería el usuario.
@@ -251,6 +249,14 @@ public class CreditCalculatorPage extends BasePage {
             throw new IllegalArgumentException(
                     "El valor " + target + " no coincide con un paso del control; valor alcanzado: " + reached);
         }
+    }
+
+    private static By optionButtons(String label) {
+        return By.xpath(OPTIONS_CARD + "//p[normalize-space()='" + label + "']/following-sibling::div//button");
+    }
+
+    private static By resultValue(String label) {
+        return By.xpath(RESULT_CARD_XPATH + "//p[normalize-space()='" + label + "']/following-sibling::p");
     }
 
     private static BigDecimal sliderValue(WebElement slider) {

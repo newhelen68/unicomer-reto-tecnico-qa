@@ -7,9 +7,9 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-import com.unicomer.qa.config.ConfigManager;
 import com.unicomer.qa.models.CatFact;
 import com.unicomer.qa.models.CatFactsResponse;
+import io.qameta.allure.Allure;
 import io.qameta.allure.Description;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
@@ -30,6 +30,8 @@ import org.testng.asserts.SoftAssert;
 public class CatFactsApiTest {
 
     private static final int HTTP_OK = 200;
+    // Umbral definido por el reto; no es configurable para no relajar el requisito.
+    private static final long MAX_RESPONSE_TIME_MS = 3000;
     private static final String SCHEMA = "schemas/catfacts-schema.json";
     private static final int LIMIT = 5;
     private static final int MAX_LENGTH = 40;
@@ -41,7 +43,7 @@ public class CatFactsApiTest {
         client = new CatFactsClient();
     }
 
-    @Test(groups = {"api", "smoke", "regression"}, description = "TC-API-001 Código de estado 200")
+    @Test(groups = "smoke", description = "TC-API-001 Código de estado 200")
     @Story("Disponibilidad")
     @Severity(SeverityLevel.BLOCKER)
     @Description("Verifica que GET /facts responda exactamente con HTTP 200.")
@@ -51,7 +53,7 @@ public class CatFactsApiTest {
         assertEquals(response.statusCode(), HTTP_OK, "Código de estado HTTP");
     }
 
-    @Test(groups = {"api", "smoke", "regression"}, description = "TC-API-002 Respuesta no vacía")
+    @Test(groups = "smoke", description = "TC-API-002 Respuesta no vacía")
     @Story("Contenido")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verifica que la respuesta contenga hechos con texto.")
@@ -66,23 +68,28 @@ public class CatFactsApiTest {
                 "Cada elemento debe incluir el texto del hecho");
     }
 
-    @Test(groups = {"api", "smoke", "regression"}, description = "TC-API-003 Tiempo de respuesta menor a 3000 ms")
+    @Test(groups = "smoke", description = "TC-API-003 Tiempo de respuesta menor a 3000 ms")
     @Story("Rendimiento")
     @Severity(SeverityLevel.CRITICAL)
-    @Description("Mide una solicitud real individual y valida que responda dentro del umbral configurado.")
+    @Description("Mide una solicitud real hasta recibir el cuerpo completo y valida que tarde menos de 3000 ms.")
     public void shouldRespondWithinMaximumTime() {
-        long maximumTimeMs = ConfigManager.apiMaxResponseTimeMs();
-
+        // getTimeIn solo cubre hasta los encabezados; se mide hasta leer el cuerpo completo.
+        long start = System.nanoTime();
         Response response = client.getFacts();
-        long elapsedMs = response.getTimeIn(TimeUnit.MILLISECONDS);
+        response.asByteArray();
+        long totalTimeMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        Allure.parameter("Umbral (ms)", MAX_RESPONSE_TIME_MS);
+        Allure.parameter("Tiempo total (ms)", totalTimeMs, true);
+        Allure.parameter("Tiempo hasta encabezados (ms)", response.getTimeIn(TimeUnit.MILLISECONDS), true);
 
         // Un error rápido no debe aprobar la medición de rendimiento.
         assertEquals(response.statusCode(), HTTP_OK, "Precondición: respuesta exitosa");
-        assertTrue(elapsedMs < maximumTimeMs,
-                "Tiempo de respuesta " + elapsedMs + " ms; máximo permitido " + maximumTimeMs + " ms");
+        assertTrue(totalTimeMs < MAX_RESPONSE_TIME_MS,
+                "Tiempo de respuesta " + totalTimeMs + " ms; máximo permitido " + MAX_RESPONSE_TIME_MS + " ms");
     }
 
-    @Test(groups = {"api", "regression"}, description = "TC-API-004 Contrato de la respuesta")
+    @Test(description = "TC-API-004 Contrato de la respuesta")
     @Story("Contrato")
     @Severity(SeverityLevel.NORMAL)
     @Description("Valida Content-Type, JSON Schema, tipos de datos y coherencia del campo length.")
@@ -104,7 +111,7 @@ public class CatFactsApiTest {
         softly.assertAll();
     }
 
-    @Test(groups = {"api", "regression"}, description = "TC-API-005 Parámetros limit y max_length")
+    @Test(description = "TC-API-005 Parámetros limit y max_length")
     @Story("Parámetros de consulta")
     @Severity(SeverityLevel.NORMAL)
     @Description("Verifica que la respuesta respete los parámetros documentados limit y max_length.")
@@ -117,8 +124,9 @@ public class CatFactsApiTest {
         assertEquals(body.perPage().intValue(), LIMIT, "per_page según limit");
         assertFalse(facts.isEmpty(), "Debe existir al menos un hecho con la longitud solicitada");
         assertTrue(facts.size() <= LIMIT, "Cantidad de hechos no mayor a limit: " + facts.size());
-        assertTrue(facts.stream().allMatch(fact -> fact.length() <= MAX_LENGTH),
-                "Todos los hechos deben tener length <= " + MAX_LENGTH);
+        // Se mide el texto real para no depender del campo length que devuelve el servicio.
+        assertTrue(facts.stream().allMatch(fact -> characterCount(fact.fact()) <= MAX_LENGTH),
+                "Todos los hechos deben tener como máximo " + MAX_LENGTH + " caracteres");
     }
 
     // Cuenta caracteres Unicode, no unidades UTF-16.

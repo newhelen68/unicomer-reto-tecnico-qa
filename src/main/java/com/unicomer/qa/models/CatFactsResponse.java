@@ -9,9 +9,6 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CatFactsResponse(
-        @JsonProperty("current_page") Integer currentPage,
         @JsonProperty("per_page") Integer perPage,
-        @JsonProperty("last_page") Integer lastPage,
-        Integer total,
         List<CatFact> data) {
 }
