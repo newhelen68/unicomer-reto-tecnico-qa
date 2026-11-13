@@ -1,0 +1,139 @@
+name: QA Automation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: Navegador para las pruebas UI
+        type: choice
+        options: [chrome, firefox, edge]
+        default: chrome
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-automation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BROWSER: ${{ inputs.browser || 'chrome' }}
+  HEADLESS: "true"
+
+jobs:
+  build:
+    name: Compilación y calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Checkstyle y compilación
+        run: ./mvnw -B -ntp test-compile
+
+  api-tests:
+    name: Pruebas API
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Ejecutar suite API
+        run: ./mvnw -B -ntp test -DsuiteXmlFile=suites/api.xml
+      - name: Resumen
+        if: always()
+        run: .github/scripts/test-summary.sh "Pruebas API" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publicar evidencias
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-results
+          path: |
+            target/allure-results
+            target/surefire-reports
+          retention-days: 14
+
+  ui-tests:
+    name: Pruebas UI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Verificar navegador
+        run: |
+          case "$BROWSER" in
+            chrome) google-chrome --version ;;
+            firefox) firefox --version ;;
+            edge) microsoft-edge --version ;;
+          esac
+      - name: Ejecutar suite UI
+        run: ./mvnw -B -ntp test -DsuiteXmlFile=suites/ui.xml
+      - name: Resumen
+        if: always()
+        run: .github/scripts/test-summary.sh "Pruebas UI ($BROWSER)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publicar evidencias
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-results
+          path: |
+            target/allure-results
+            target/surefire-reports
+          retention-days: 14
+
+  report:
+    name: Reporte Allure
+    needs: [api-tests, ui-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Cache de Allure
+        uses: actions/cache@v6
+        with:
+          path: .allure
+          key: allure-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+      - name: Descargar resultados
+        uses: actions/download-artifact@v8
+        with:
+          pattern: "*-results"
+          path: results
+      - name: Consolidar resultados
+        run: |
+          mkdir -p target/allure-results
+          for dir in results/*/allure-results; do
+            cp -r "$dir"/. target/allure-results/
+          done
+      - name: Generar reporte
+        run: ./mvnw -B -ntp allure:report
+      - name: Publicar reporte
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report
+          path: target/allure-report
+          retention-days: 14

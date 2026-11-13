@@ -1,0 +1,48 @@
+name: Defectos conocidos
+
+# Ejecución bajo demanda: la suite falla mientras los defectos sigan abiertos.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BROWSER: chrome
+  HEADLESS: "true"
+
+jobs:
+  known-defects:
+    name: Defectos conocidos
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Ejecutar suite de defectos conocidos
+        run: ./mvnw -B -ntp test -DsuiteXmlFile=suites/known-defects.xml
+      - name: Resumen
+        if: always()
+        run: .github/scripts/test-summary.sh "Defectos conocidos" >> "$GITHUB_STEP_SUMMARY"
+      - name: Cache de Allure
+        if: always()
+        uses: actions/cache@v6
+        with:
+          path: .allure
+          key: allure-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+      - name: Generar reporte
+        if: always()
+        run: ./mvnw -B -ntp allure:report
+      - name: Publicar evidencias
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: known-defects-report
+          path: |
+            target/allure-report
+            target/surefire-reports
+          retention-days: 14
