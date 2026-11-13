@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Respuesta paginada de GET /facts",
+  "type": "object",
+  "required": ["current_page", "data", "per_page", "total", "last_page"],
+  "properties": {
+    "current_page": { "type": "integer", "minimum": 1 },
+    "per_page": { "type": "integer", "minimum": 1 },
+    "total": { "type": "integer", "minimum": 0 },
+    "last_page": { "type": "integer", "minimum": 1 },
+    "from": { "type": ["integer", "null"] },
+    "to": { "type": ["integer", "null"] },
+    "path": { "type": "string" },
+    "first_page_url": { "type": "string" },
+    "last_page_url": { "type": "string" },
+    "next_page_url": { "type": ["string", "null"] },
+    "prev_page_url": { "type": ["string", "null"] },
+    "data": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/catFact" }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url", "label", "active"],
+        "properties": {
+          "url": { "type": ["string", "null"] },
+          "label": { "type": "string" },
+          "active": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "catFact": {
+      "type": "object",
+      "required": ["fact", "length"],
+      "additionalProperties": false,
+      "properties": {
+        "fact": { "type": "string", "minLength": 1 },
+        "length": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
