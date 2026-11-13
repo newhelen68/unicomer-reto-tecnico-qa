@@ -13,7 +13,7 @@ import java.util.List;
 public record CreditTestData(
         List<CreditProduct> products,
         List<CreditScenario> calculationScenarios,
-        CreditScenario dynamicUpdateScenario,
+        DynamicUpdateScenario dynamicUpdateScenario,
         PaymentAlertScenario paymentAlertScenario,
         StaleAlertScenario staleAlertScenario) {
 
@@ -40,6 +40,12 @@ public record CreditTestData(
         } catch (IOException e) {
             throw new UncheckedIOException("No fue posible leer " + RESOURCE, e);
         }
+    }
+
+    public record DynamicUpdateScenario(
+            CreditScenario initial,
+            BigDecimal expectedPaymentAtMaxTerm,
+            BigDecimal expectedPaymentAtMaxRate) {
     }
 
     public record PaymentAlertScenario(CreditScenario initial, BigDecimal adjustedMonthlyIncome) {

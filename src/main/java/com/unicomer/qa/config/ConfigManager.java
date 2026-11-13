@@ -18,11 +18,13 @@ import java.util.stream.Stream;
 /**
  * Configuración centralizada del framework.
  *
- * <p>Prioridad: propiedad JVM ({@code -Dbrowser}), variable de entorno ({@code BROWSER}),
+ * <p>Prioridad: propiedad JVM ({@code -Dbrowser}), variable de entorno ({@code QA_BROWSER}),
  * archivo {@code .env} y valores por defecto de {@code config.properties}.
  */
 public final class ConfigManager {
 
+    // Evita colisiones con variables genéricas del sistema, como BROWSER.
+    private static final String PREFIX = "QA_";
     private static final String DEFAULTS_RESOURCE = "config.properties";
     private static final Path ENV_FILE = Path.of(".env");
 
@@ -33,43 +35,43 @@ public final class ConfigManager {
     }
 
     public static String webBaseUrl() {
-        return get("WEB_BASE_URL");
+        return get("QA_WEB_BASE_URL");
     }
 
     public static String apiBaseUrl() {
-        return get("API_BASE_URL");
+        return get("QA_API_BASE_URL");
+    }
+
+    public static String browserName() {
+        return get("QA_BROWSER");
     }
 
     public static BrowserType browser() {
-        return BrowserType.from(get("BROWSER"));
+        return BrowserType.from(browserName());
     }
 
     public static boolean isHeadless() {
-        return Boolean.parseBoolean(get("HEADLESS"));
+        return Boolean.parseBoolean(get("QA_HEADLESS"));
     }
 
     public static int windowWidth() {
-        return getInt("WINDOW_WIDTH");
+        return getInt("QA_WINDOW_WIDTH");
     }
 
     public static int windowHeight() {
-        return getInt("WINDOW_HEIGHT");
+        return getInt("QA_WINDOW_HEIGHT");
     }
 
     public static Duration explicitWait() {
-        return Duration.ofSeconds(getInt("EXPLICIT_WAIT"));
+        return Duration.ofSeconds(getInt("QA_EXPLICIT_WAIT"));
     }
 
     public static Duration pageLoadTimeout() {
-        return Duration.ofSeconds(getInt("PAGE_LOAD_TIMEOUT"));
+        return Duration.ofSeconds(getInt("QA_PAGE_LOAD_TIMEOUT"));
     }
 
     public static int apiRequestTimeoutMs() {
-        return getInt("API_REQUEST_TIMEOUT_MS");
-    }
-
-    public static long apiMaxResponseTimeMs() {
-        return getInt("API_MAX_RESPONSE_TIME_MS");
+        return getInt("QA_API_REQUEST_TIMEOUT_MS");
     }
 
     private static String get(String key) {
@@ -93,9 +95,9 @@ public final class ConfigManager {
         }
     }
 
-    // BROWSER -> browser, EXPLICIT_WAIT -> explicit.wait
+    // QA_BROWSER -> browser, QA_EXPLICIT_WAIT -> explicit.wait
     private static String toPropertyName(String key) {
-        return key.toLowerCase(Locale.ROOT).replace('_', '.');
+        return key.substring(PREFIX.length()).toLowerCase(Locale.ROOT).replace('_', '.');
     }
 
     private static Properties loadDefaults() {

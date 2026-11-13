@@ -14,6 +14,11 @@ fi
 header=$(grep -o '<testng-results[^>]*>' "$results")
 attr() { echo "$header" | grep -o "$1=\"[0-9]*\"" | grep -o '[0-9]*'; }
 
-echo "| Total | Aprobadas | Fallidas | Omitidas |"
+# El total de TestNG incluye las pruebas excluidas por grupo; se cuentan solo las ejecutadas.
+passed=$(attr passed)
+failed=$(attr failed)
+skipped=$(attr skipped)
+
+echo "| Ejecutadas | Aprobadas | Fallidas | Omitidas |"
 echo "|---|---|---|---|"
-echo "| $(attr total) | $(attr passed) | $(attr failed) | $(attr skipped) |"
+echo "| $((passed + failed + skipped)) | $passed | $failed | $skipped |"

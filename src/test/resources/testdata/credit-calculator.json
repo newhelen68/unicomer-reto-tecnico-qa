@@ -6,6 +6,7 @@
       "amountLabel": "Monto solicitado",
       "minimumIncome": 350,
       "minimumAmount": 1500,
+      "financingAtMinimumAmount": 1500.00,
       "termYears": { "min": 2, "max": 10 },
       "interestRate": { "min": 8.5, "max": 18.5 }
     },
@@ -15,6 +16,7 @@
       "amountLabel": "Precio de venta",
       "minimumIncome": 750,
       "minimumAmount": 30000,
+      "financingAtMinimumAmount": 27000.00,
       "termYears": { "min": 5, "max": 30 },
       "interestRate": { "min": 6.95, "max": 9 }
     },
@@ -24,6 +26,7 @@
       "amountLabel": "Precio de venta",
       "minimumIncome": 850,
       "minimumAmount": 5000,
+      "financingAtMinimumAmount": 4500.00,
       "termYears": { "min": 2, "max": 8 },
       "interestRate": { "min": 8.5, "max": 9 }
     }
@@ -61,14 +64,18 @@
     }
   ],
   "dynamicUpdateScenario": {
-    "creditType": "Vivienda",
-    "purpose": "Compra de vivienda nueva o usada",
-    "monthlyIncome": 2000,
-    "requestedAmount": 60000,
-    "termYears": 5,
-    "interestRate": 6.95,
-    "expectedMaximumFinancing": 54000.00,
-    "expectedMonthlyPayment": 1067.99
+    "initial": {
+      "creditType": "Vivienda",
+      "purpose": "Compra de vivienda nueva o usada",
+      "monthlyIncome": 2000,
+      "requestedAmount": 60000,
+      "termYears": 5,
+      "interestRate": 6.95,
+      "expectedMaximumFinancing": 54000.00,
+      "expectedMonthlyPayment": 1067.99
+    },
+    "expectedPaymentAtMaxTerm": 357.45,
+    "expectedPaymentAtMaxRate": 434.50
   },
   "paymentAlertScenario": {
     "initial": {

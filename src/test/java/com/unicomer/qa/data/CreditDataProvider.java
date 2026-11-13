@@ -11,17 +11,21 @@ public final class CreditDataProvider {
     private CreditDataProvider() {
     }
 
-    @DataProvider(name = CALCULATION_SCENARIOS)
+    @DataProvider(name = CALCULATION_SCENARIOS, propagateFailureAsTestFailure = true)
     public static Object[][] calculationScenarios() {
-        return toRows(CreditTestData.get().calculationScenarios());
+        return toRows(CALCULATION_SCENARIOS, CreditTestData.get().calculationScenarios());
     }
 
-    @DataProvider(name = CREDIT_PRODUCTS)
+    @DataProvider(name = CREDIT_PRODUCTS, propagateFailureAsTestFailure = true)
     public static Object[][] creditProducts() {
-        return toRows(CreditTestData.get().products());
+        return toRows(CREDIT_PRODUCTS, CreditTestData.get().products());
     }
 
-    private static Object[][] toRows(List<?> items) {
+    // Sin filas, TestNG omitiría la prueba y la suite terminaría en verde.
+    private static Object[][] toRows(String name, List<?> items) {
+        if (items == null || items.isEmpty()) {
+            throw new IllegalStateException("El conjunto de datos '" + name + "' está vacío");
+        }
         return items.stream().map(item -> new Object[] {item}).toArray(Object[][]::new);
     }
 }

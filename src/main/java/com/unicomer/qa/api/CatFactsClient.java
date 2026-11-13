@@ -12,7 +12,6 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +54,7 @@ public class CatFactsClient {
                 .when()
                 .get(FACTS_PATH)
                 .andReturn();
-        LOG.info("GET {} {} -> {} en {} ms", FACTS_PATH, queryParams, response.statusCode(),
-                response.getTimeIn(TimeUnit.MILLISECONDS));
+        LOG.info("GET {} {} -> {}", FACTS_PATH, queryParams, response.statusCode());
         return response;
     }
 }

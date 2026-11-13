@@ -23,9 +23,9 @@ con Selenium y pruebas del endpoint `GET https://catfact.ninja/facts` con REST A
 ## Estructura
 
 ```text
-.github/workflows/                    Pipelines de CI
+.github/                              Pipeline de CI y script de resumen
 config/checkstyle/checkstyle.xml      Reglas de calidad de código
-suites/                               Suites TestNG (testng, ui, api, smoke, regression, known-defects)
+suites/                               Suites TestNG (testng, ui, api, smoke, known-defects)
 src/main/java/com/unicomer/qa/
   api/          CatFactsClient
   config/       ConfigManager
@@ -57,9 +57,11 @@ Selenium Manager descarga automáticamente el driver del navegador.
 La configuración se resuelve en este orden de prioridad:
 
 1. Propiedad JVM: `-Dbrowser=firefox`, `-Dheadless=true`, `-Dexplicit.wait=20`.
-2. Variable de entorno: `BROWSER`, `HEADLESS`, `EXPLICIT_WAIT`.
+2. Variable de entorno con prefijo `QA_`: `QA_BROWSER`, `QA_HEADLESS`, `QA_EXPLICIT_WAIT`.
 3. Archivo `.env` en la raíz del proyecto (opcional).
 4. Valores por defecto en `src/main/resources/config.properties`.
+
+El prefijo evita conflictos con variables genéricas del sistema, como `BROWSER`.
 
 Para un ambiente local, copiar la plantilla y ajustar los valores:
 
@@ -69,13 +71,12 @@ cp .env.example .env
 
 | Variable | Uso |
 |---|---|
-| `WEB_BASE_URL` / `API_BASE_URL` | URLs base del sitio y de la API |
-| `BROWSER` | `chrome`, `firefox` o `edge` |
-| `HEADLESS` | Ejecución sin interfaz gráfica |
-| `WINDOW_WIDTH` / `WINDOW_HEIGHT` | Tamaño de la ventana |
-| `EXPLICIT_WAIT` / `PAGE_LOAD_TIMEOUT` | Esperas en segundos |
-| `API_REQUEST_TIMEOUT_MS` | Tiempo máximo de conexión y lectura HTTP |
-| `API_MAX_RESPONSE_TIME_MS` | Umbral de la validación de rendimiento (3000 ms) |
+| `QA_WEB_BASE_URL` / `QA_API_BASE_URL` | URLs base del sitio y de la API |
+| `QA_BROWSER` | `chrome`, `firefox` o `edge` |
+| `QA_HEADLESS` | Ejecución sin interfaz gráfica |
+| `QA_WINDOW_WIDTH` / `QA_WINDOW_HEIGHT` | Tamaño de la ventana |
+| `QA_EXPLICIT_WAIT` / `QA_PAGE_LOAD_TIMEOUT` | Esperas en segundos |
+| `QA_API_REQUEST_TIMEOUT_MS` | Tiempo máximo de conexión y lectura HTTP |
 
 ## Instalación
 
@@ -100,7 +101,6 @@ Con Maven 3.9 o superior instalado, los mismos comandos funcionan con `mvn`.
 ./mvnw clean test -DsuiteXmlFile=suites/ui.xml
 ./mvnw clean test -DsuiteXmlFile=suites/api.xml
 ./mvnw clean test -DsuiteXmlFile=suites/smoke.xml
-./mvnw clean test -DsuiteXmlFile=suites/regression.xml
 
 # Navegador y modo headless
 ./mvnw clean test -Dbrowser=chrome
@@ -113,11 +113,10 @@ Con Maven 3.9 o superior instalado, los mismos comandos funcionan con `mvn`.
 
 | Suite | Contenido | Pruebas |
 |---|---|---|
-| `testng.xml` | UI + API, sin defectos conocidos | 14 |
+| `testng.xml` | Regresión completa: UI + API, sin defectos conocidos | 14 |
 | `ui.xml` | Calculadora de créditos | 9 |
 | `api.xml` | Cat Facts | 5 |
-| `smoke.xml` | Grupo `smoke` | 4 |
-| `regression.xml` | Grupo `regression` | 14 |
+| `smoke.xml` | Carga de la calculadora, flujo del reto y validaciones obligatorias de la API | 7 |
 | `known-defects.xml` | Grupo `known-defect` | 1 |
 
 ## Reportes
@@ -127,9 +126,9 @@ Con Maven 3.9 o superior instalado, los mismos comandos funcionan con `mvn`.
 ```
 
 Genera `target/allure-report/index.html`, un archivo único que se abre directamente en el navegador.
-Incluye pasos, parámetros, duración, intercambios HTTP de la API, ambiente de ejecución y
-captura de pantalla de cada prueba UI fallida. La primera generación descarga un Node.js privado
-en `.allure/` (excluido de Git).
+Incluye pasos, parámetros, duración, intercambios HTTP de la API, ambiente de ejecución y una captura
+de pantalla al final de cada prueba UI (estado final o momento del fallo). La primera generación
+descarga un Node.js privado y Allure (unos 150 MB) en `.allure/`, excluido de Git.
 
 Los resultados de TestNG quedan en `target/surefire-reports`.
 
@@ -137,13 +136,16 @@ Los resultados de TestNG quedan en `target/surefire-reports`.
 
 El workflow `qa-automation.yml` se ejecuta en push a `main`, en pull requests y de forma manual
 (con selección de navegador). Ejecuta Checkstyle y compilación con Java 21, las suites API y UI en jobs
-independientes, y publica como artifacts los resultados y el reporte Allure, incluso cuando hay fallos.
-
-El workflow `known-defects.yml` ejecuta bajo demanda la suite de defectos conocidos y publica su reporte.
+independientes, y publica como artifacts (30 días) los resultados y el reporte Allure, incluso cuando
+hay fallos.
 
 ## Consideraciones
 
 - Las pruebas dependen de servicios externos públicos; su disponibilidad y latencia afectan los resultados.
+- Los resultados esperados de la calculadora se calcularon con la fórmula de amortización y las reglas
+  visibles de cada tipo de crédito; el escenario de Vivienda reproduce el ejemplo del documento del reto.
+- El tiempo de la API se mide hasta recibir la respuesta completa, con un umbral fijo de 3000 ms.
+- No se envía el encabezado `X-CSRF-TOKEN` del documento: el servicio responde sin él.
 - `TC-UI-006` documenta el defecto D-01: en Vivienda y Vehículo, la alerta "La cuota supera tu ingreso"
   permanece visible cuando el monto se vuelve inválido. Falla de forma intencional y está excluido de las
   suites principales.
