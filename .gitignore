@@ -1,0 +1,20 @@
+# Compilación y reportes
+target/
+allure-results/
+allure-report/
+.allure/
+test-output/
+*.log
+
+# Configuración local
+.env
+
+# IDE y sistema operativo
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db
