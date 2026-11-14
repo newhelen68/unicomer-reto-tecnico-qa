@@ -144,7 +144,8 @@ hay fallos.
 - Las pruebas dependen de servicios externos públicos; su disponibilidad y latencia afectan los resultados.
 - Los resultados esperados de la calculadora se calcularon con la fórmula de amortización y las reglas
   visibles de cada tipo de crédito; el escenario de Vivienda reproduce el ejemplo del documento del reto.
-- El tiempo de la API se mide hasta recibir la respuesta completa, con un umbral fijo de 3000 ms.
+- El tiempo de la API se mide hasta recibir la respuesta completa, con un umbral fijo de 3000 ms, después
+  de una solicitud de calentamiento que no se mide para excluir la inicialización del cliente.
 - No se envía el encabezado `X-CSRF-TOKEN` del documento: el servicio responde sin él.
 - `TC-UI-006` documenta el defecto D-01: en Vivienda y Vehículo, la alerta "La cuota supera tu ingreso"
   permanece visible cuando el monto se vuelve inválido. Falla de forma intencional y está excluido de las
