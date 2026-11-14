@@ -71,8 +71,14 @@ public class CatFactsApiTest {
     @Test(groups = "smoke", description = "TC-API-003 Tiempo de respuesta menor a 3000 ms")
     @Story("Rendimiento")
     @Severity(SeverityLevel.CRITICAL)
-    @Description("Mide una solicitud real hasta recibir el cuerpo completo y valida que tarde menos de 3000 ms.")
+    @Description("Tras una solicitud de calentamiento, mide una solicitud real hasta recibir el cuerpo completo "
+            + "y valida que tarde menos de 3000 ms.")
     public void shouldRespondWithinMaximumTime() {
+        // La primera solicitud incluye la inicialización del cliente; no forma parte del tiempo del servicio.
+        Allure.step("Solicitud de calentamiento (no se mide)", () -> {
+            client.getFacts();
+        });
+
         // getTimeIn solo cubre hasta los encabezados; se mide hasta leer el cuerpo completo.
         long start = System.nanoTime();
         Response response = client.getFacts();
